@@ -4293,6 +4293,10 @@
     "sidebar-list-reaches-bottom-corner": {
       "category": "fixed",
       "message": "On iPad and iPhone Duo, the sidebar's tabs scroll on to the bottom of the screen and into its corner instead of stopping short above it."
+    },
+    "mouse-swipe-buttons-switch-spaces-over-sidebar": {
+      "category": "fixed",
+      "message": "Mouse Back and Forward buttons set up as swipes in Logitech Options+ switch Spaces when the pointer is over the sidebar, as other mice do."
     }
   }
 }
