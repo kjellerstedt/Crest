@@ -4293,6 +4293,10 @@
     "sidebar-list-reaches-bottom-corner": {
       "category": "fixed",
       "message": "On iPad and iPhone Duo, the sidebar's tabs scroll on to the bottom of the screen and into its corner instead of stopping short above it."
+    },
+    "pins-stretch-to-fill-row": {
+      "category": "new",
+      "message": "Pins can stretch to fill the width of a row that isn't full, so an uneven number of pins no longer leaves empty space."
     }
   }
 }

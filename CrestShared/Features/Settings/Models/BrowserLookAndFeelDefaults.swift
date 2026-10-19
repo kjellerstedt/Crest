@@ -12,6 +12,7 @@ enum BrowserLookAndFeelDefaults {
     static let cornerRadius: Double = 10
     static let tabScale: Double = 1
     static let pinColumns = 0
+    static let pinsFillRow = false
     static let tabs = BrowserTabAppearance()
     static let address = BrowserAddressAppearance()
     static let foldersAlwaysVisible = false
@@ -42,6 +43,7 @@ enum BrowserLookAndFeelDefaults {
 
         density.set(tabScale, forKey: BrowserSidebarDensityPreference.scaleKey)
         density.set(pinColumns, forKey: BrowserSidebarDensityPreference.pinColumnsKey)
+        density.set(pinsFillRow, forKey: BrowserSidebarDensityPreference.pinsFillRowKey)
 
         folders.set(foldersAlwaysVisible, forKey: BrowserFolderAppearancePreference.alwaysVisibleKey)
         folders.set(foldersShowTabCounts, forKey: BrowserFolderAppearancePreference.showsTabCountsKey)
