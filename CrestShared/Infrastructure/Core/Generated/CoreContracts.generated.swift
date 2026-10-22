@@ -161,6 +161,7 @@ enum Change: Equatable, Sendable {
     case sitePermissionsChanged(SitePermissionsChanged)
     case spaceLockChanged(SpaceLockChanged)
     case spaceSettingsChanged(SpaceSettingsChanged)
+    case spaceVisibilityChanged(SpaceVisibilityChanged)
     case spacesChanged(SpacesChanged)
     case splitGroupsChanged(SplitGroupsChanged)
     case storageFailed(StorageFailed)
@@ -206,6 +207,7 @@ enum Rejection: Equatable, Error, Sendable {
     case borrowedProfileRequiresOwner(BorrowedProfileRequiresOwner)
     case borrowedWorkspaceRequiresSpace(BorrowedWorkspaceRequiresSpace)
     case cannotDeleteLastSpace(CannotDeleteLastSpace)
+    case cannotHideLastSpace(CannotHideLastSpace)
     case cannotMoveSplitAcrossSpaces(CannotMoveSplitAcrossSpaces)
     case cannotPinSplit(CannotPinSplit)
     case closePreparationUnderway(ClosePreparationUnderway)
@@ -368,6 +370,7 @@ enum Rejection: Equatable, Error, Sendable {
         case .bookmarksTooLarge(let value): value.message
         case .bookmarksUnrecognized(let value): value.message
         case .cannotDeleteLastSpace(let value): value.message
+        case .cannotHideLastSpace(let value): value.message
         case .cannotMoveSplitAcrossSpaces(let value): value.message
         case .cannotPinSplit(let value): value.message
         case .currentTabsOnly(let value): value.message
@@ -587,6 +590,7 @@ extension Change {
         case .sitePermissionsChanged(let change): change.apply(to: state)
         case .spaceLockChanged(let change): change.apply(to: state)
         case .spaceSettingsChanged(let change): change.apply(to: state)
+        case .spaceVisibilityChanged(let change): change.apply(to: state)
         case .spacesChanged(let change): change.apply(to: state)
         case .splitGroupsChanged(let change): change.apply(to: state)
         case .storageFailed(let change): change.apply(to: state)
@@ -660,6 +664,7 @@ extension Change {
         case .sitePermissionsChanged(let change): change.apply(to: core, in: &batch)
         case .spaceLockChanged(let change): change.apply(to: core, in: &batch)
         case .spaceSettingsChanged(let change): change.apply(to: core, in: &batch)
+        case .spaceVisibilityChanged(let change): change.apply(to: core, in: &batch)
         case .spacesChanged(let change): change.apply(to: core, in: &batch)
         case .splitGroupsChanged(let change): change.apply(to: core, in: &batch)
         case .storageFailed(let change): change.apply(to: core, in: &batch)
@@ -733,6 +738,7 @@ extension Change {
         case .sitePermissionsChanged(let change): change.note(in: &receipts)
         case .spaceLockChanged(let change): change.note(in: &receipts)
         case .spaceSettingsChanged(let change): change.note(in: &receipts)
+        case .spaceVisibilityChanged(let change): change.note(in: &receipts)
         case .spacesChanged(let change): change.note(in: &receipts)
         case .splitGroupsChanged(let change): change.note(in: &receipts)
         case .storageFailed(let change): change.note(in: &receipts)
@@ -1425,6 +1431,12 @@ struct CancelImportRead: Intent, SetupFlowIntent, Equatable, Sendable {
 struct CannotDeleteLastSpace: Equatable, Sendable {
     var message: LocalizedStringResource {
         LocalizedStringResource("Crest needs at least one Space.")
+    }
+}
+
+struct CannotHideLastSpace: Equatable, Sendable {
+    var message: LocalizedStringResource {
+        LocalizedStringResource("Crest needs at least one Space on this device.")
     }
 }
 
@@ -2962,6 +2974,11 @@ struct GetAgentPreferences: Query, Equatable, Sendable {
 
 struct GetEnginePreferences: Query, Equatable, Sendable {
     typealias Answer = EnginePreferences
+
+}
+
+struct GetSpaceVisibility: Query, Equatable, Sendable {
+    typealias Answer = SpaceVisibility
 
 }
 
@@ -5916,6 +5933,11 @@ struct ShowSpace: Intent, WindowIntent, Equatable, Sendable {
     let spaceID: UUID
 }
 
+struct ShowSpaceOnDevice: Intent, WindowIntent, Equatable, Sendable {
+    let spaceID: UUID
+    let shown: Bool
+}
+
 struct ShowStartPage: Intent, SessionIntent, Equatable, Sendable {
     let workspaceID: UUID
     let windowID: UUID
@@ -6313,6 +6335,14 @@ struct SpaceState: Equatable, Sendable, Identifiable {
             history: history
         )
     }
+}
+
+struct SpaceVisibility: Equatable, Sendable {
+    let hiddenSpaceIDs: [UUID]
+}
+
+struct SpaceVisibilityChanged: CoreChange, Equatable, Sendable {
+    let visibility: SpaceVisibility
 }
 
 struct SpacesChanged: CoreChange, Equatable, Sendable {

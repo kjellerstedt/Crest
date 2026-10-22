@@ -19,6 +19,7 @@ public sealed record OpenWindow(Guid WindowId, Guid WorkspaceId, bool Saved, Gui
     internal override void Apply(Device device, DeviceTurn turn) {
         var authority = device.Workspace(WorkspaceId);
         var session = authority.Current;
+        var spaceVisibility = device.SpaceVisibilityOf(WorkspaceId);
         lock (device.Gate) {
             if (device.OpenWindows.TryGetValue(WindowId, out var existing)) {
                 device.Publishing(existing, session);
@@ -32,12 +33,12 @@ public sealed record OpenWindow(Guid WindowId, Guid WorkspaceId, bool Saved, Gui
                 : CopyingWindowId is { } copied && device.OpenWindows.TryGetValue(copied, out var source)
                     && source.WorkspaceId == WorkspaceId
                     ? Window.Copying(source, WindowId, Saved)
-                    : Window.Launching(WindowId, WorkspaceId, Saved, session,
+                    : Window.Launching(WindowId, WorkspaceId, Saved, session, spaceVisibility,
                         WorkspaceId == device.PersistentWorkspace ? device.LegacyShownTabs : new Dictionary<Guid, Guid>());
             if (!RestoresTabs) window.ForgetTabs();
             foreach (var shown in ShowingTabs) window.Adopt(shown.SpaceId, shown.TabId);
             if (ShowingSpaceId is { } showing && session.Space(showing) is not null) window.MoveTo(showing);
-            window.Repair(session);
+            window.Repair(session, spaceVisibility);
             device.OpenWindows[window.Id] = window;
             if (Saved) device.Reopen(window.Id);
             turn.Changes.Publish(device.Publishing(window, session)!);
