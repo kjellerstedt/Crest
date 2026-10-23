@@ -4350,6 +4350,10 @@
       "category": "fixed",
       "message": "The sidebar hides and shows more smoothly, the History, Archive and Downloads selector closes back to its button, and History, Archive or Downloads opened over a hidden sidebar stays open while you use the page."
     },
+    "space-icon-size-setting": {
+      "category": "new",
+      "message": "The Space icons at the bottom of the sidebar shrink so more Spaces fit without scrolling. To keep one size instead, turn off Fit Space icons to sidebar in Appearance settings and choose it with the slider."
+    },
     "pins-stretch-to-fill-row": {
       "category": "new",
       "message": "Pins can stretch to fill the width of a row that isn't full, so an uneven number of pins no longer leaves empty space."
