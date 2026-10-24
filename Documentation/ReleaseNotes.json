@@ -4362,6 +4362,10 @@
       "category": "fixed",
       "message": "Shift-clicking a tab in the sidebar selects every tab between the active tab and the one you clicked, instead of only adding that tab like Command-click."
     },
+    "palette-search-typed-address": {
+      "category": "improved",
+      "message": "The command palette offers to search for a typed or pasted address as well as open it."
+    },
     "pins-stretch-to-fill-row": {
       "category": "new",
       "message": "Pins can stretch to fill the width of a row that isn't full, so an uneven number of pins no longer leaves empty space."
