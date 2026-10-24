@@ -30,6 +30,18 @@ struct BrowserAddressAppearanceGroup: View {
                 Toggle("Animate into command palette", isOn: paletteMorph.binding)
                     .labelsHidden()
             }
+            CrestSettingRow(
+                "Loading indicator color", setting: loadingColor.resettable("Loading indicator color")
+            ) {
+                Picker("Loading indicator color", selection: loadingColor.binding) {
+                    Text("Accent").tag(BrowserAddressAppearance.LoadingColor.accent)
+                    Text("Website").tag(BrowserAddressAppearance.LoadingColor.website)
+                }
+                .pickerStyle(.segmented)
+                .labelsHidden()
+                .fixedSize()
+                .accessibilityLabel("Loading indicator color")
+            }
         }
     }
 
@@ -53,12 +65,19 @@ struct BrowserAddressAppearanceGroup: View {
             default: BrowserLookAndFeelDefaults.address.animatesIntoCommandPalette)
     }
 
+    private var loadingColor: CrestSettingValue<BrowserAddressAppearance.LoadingColor> {
+        CrestSettingValue(
+            $appearance.address.loadingColor,
+            default: BrowserLookAndFeelDefaults.address.loadingColor)
+    }
+
     private var settings: [CrestResettableSetting] {
         [
             fill.resettable("Color fill"),
             border.resettable("Border"),
             outline.resettable("Accent outline while editing"),
             paletteMorph.resettable("Animate into command palette"),
+            loadingColor.resettable("Loading indicator color"),
         ]
     }
 }

@@ -47,6 +47,10 @@ final class BrowserAddressAppearance {
     /// Whether the field grows into the command palette and the palette
     /// shrinks back into it, rather than the palette opening in place.
     var animatesIntoCommandPalette = true { didSet { changed() } }
+    /// Where the loading indicator takes its colour: the field's accent, or
+    /// the page's own.
+    enum LoadingColor: String, Codable, CaseIterable { case accent, website }
+    var loadingColor: LoadingColor = .accent { didSet { changed() } }
     var color: BrandColor? { didSet { changed() } }
     /// Called after any choice changes, so its owner can save it.
     @ObservationIgnored var changed: () -> Void = {}
@@ -92,7 +96,7 @@ extension BrowserTabAppearance: @MainActor Codable {
 
 extension BrowserAddressAppearance: @MainActor Codable {
     private enum CodingKeys: String, CodingKey {
-        case fill, border, usesAccentWhenEditing, animatesIntoCommandPalette, color
+        case fill, border, usesAccentWhenEditing, animatesIntoCommandPalette, loadingColor, color
     }
 
     convenience init(from decoder: Decoder) throws {
@@ -103,6 +107,7 @@ extension BrowserAddressAppearance: @MainActor Codable {
         usesAccentWhenEditing = (try? values.decode(Bool.self, forKey: .usesAccentWhenEditing)) ?? false
         animatesIntoCommandPalette =
             (try? values.decode(Bool.self, forKey: .animatesIntoCommandPalette)) ?? true
+        loadingColor = (try? values.decode(LoadingColor.self, forKey: .loadingColor)) ?? .accent
         color = try? values.decode(BrandColor.self, forKey: .color)
     }
 
@@ -112,6 +117,7 @@ extension BrowserAddressAppearance: @MainActor Codable {
         try values.encode(border, forKey: .border)
         try values.encode(usesAccentWhenEditing, forKey: .usesAccentWhenEditing)
         try values.encode(animatesIntoCommandPalette, forKey: .animatesIntoCommandPalette)
+        try values.encode(loadingColor, forKey: .loadingColor)
         try values.encodeIfPresent(color, forKey: .color)
     }
 }

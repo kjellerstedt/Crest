@@ -61,8 +61,16 @@ struct SpaceSidebarAddressBand: View {
             morphNamespace: commandSurfaceNamespace,
             spaceID: space.id,
             commandPaletteHandoff: commandPaletteHandoff,
-            branding: space.settings.look
+            branding: space.settings.look,
+            siteAccent: siteAccent
         )
+    }
+
+    /// The page's theme colour when it is distinctive, else the colour taken
+    /// from the tab's icon, as pinned tabs choose theirs.
+    private var siteAccent: BrowserTabIconAccent? {
+        displayedPage?.siteThemeIconAccent?.preferring(extracted: selectedTab?.iconTint)
+            ?? selectedTab?.iconTint
     }
 
     private var selectedTab: TabStateModel? {

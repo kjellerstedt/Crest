@@ -4589,6 +4589,10 @@
     "website-data-locked-space-guard": {
       "category": "internal",
       "message": "Listing or clearing a locked Space's website data is refused until it is unlocked, Remove All clears every site's data in the Space, and the site commands on iPhone and iPad need a page that shows a site."
+    },
+    "address-bar-loading-indicator": {
+      "category": "improved",
+      "message": "Page loading now shows in the address bar with a clearer indicator instead of on the page, and Look and Feel can color it with the website's own theme color."
     }
   }
 }

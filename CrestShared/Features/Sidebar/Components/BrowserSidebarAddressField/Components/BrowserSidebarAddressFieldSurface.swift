@@ -8,17 +8,28 @@ import SwiftUI
 /// its only wearer — the Quick Window dresses its own address row in the same
 /// surface without adopting the sidebar's anatomy.
 struct BrowserSidebarAddressFieldSurface: ViewModifier {
+    // MARK: - Static Variables
+
+    private static let loadingLineHeight: CGFloat = 2
+
+    // MARK: - Variables
+
     var metrics = BrowserSidebarAddressFieldMetrics.pointer
     var leadingPadding: CGFloat? = nil
     let progress: Double
     let isLoading: Bool
     let isEditing: Bool
     var branding: SpaceBranding? = nil
+    /// The shown page's theme colour. Used for the loading indicator only, and
+    /// only when the person chose the website's colour.
+    var siteAccent: BrowserTabIconAccent? = nil
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
 
     @Environment(\.spaceChromeAccent) private var spaceAccent
+
+    // MARK: - Actions - Surface
 
     func body(content: Content) -> some View {
         band(
@@ -33,8 +44,19 @@ struct BrowserSidebarAddressFieldSurface: ViewModifier {
                     fieldShape.fill(accent.opacity(BrowserTabAppearance.intensity(appearance.fill) * 0.4))
                 }
                 fieldShape
-                    .fill(accent.opacity(isLoading ? 0.2 : 0))
+                    .fill(loadingAccent.opacity(isLoading ? CrestOpacity.loadingSurface : 0))
                     .scaleEffect(x: loadingProgress, anchor: .leading)
+                    .mask(fieldShape)
+                    .animation(
+                        CrestMotion.loadingProgress.unlessReducingMotion(reduceMotion),
+                        value: loadingProgress
+                    )
+                Rectangle()
+                    .fill(loadingAccent)
+                    .frame(height: Self.loadingLineHeight)
+                    .scaleEffect(x: loadingProgress, anchor: .leading)
+                    .frame(maxHeight: .infinity, alignment: .bottom)
+                    .opacity(isLoading ? 1 : 0)
                     .mask(fieldShape)
                     .animation(
                         CrestMotion.loadingProgress.unlessReducingMotion(reduceMotion),
@@ -76,6 +98,15 @@ struct BrowserSidebarAddressFieldSurface: ViewModifier {
         appearance.color?.color ?? spaceAccent ?? (branding?.primaryColor ?? .indigo).color
     }
 
+    /// The page's theme colour when asked for and distinctive enough to read
+    /// on the field, else the field's own accent.
+    private var loadingAccent: Color {
+        guard appearance.loadingColor == .website, let siteAccent, siteAccent.isDistinctive else {
+            return accent
+        }
+        return siteAccent.color
+    }
+
     private var fieldShape: RoundedRectangle {
         RoundedRectangle(cornerRadius: BrowserSidebarMetrics.layerCornerRadius(), style: .continuous)
     }
@@ -88,7 +119,8 @@ extension View {
         progress: Double,
         isLoading: Bool,
         isEditing: Bool,
-        branding: SpaceBranding? = nil
+        branding: SpaceBranding? = nil,
+        siteAccent: BrowserTabIconAccent? = nil
     ) -> some View {
         modifier(
             BrowserSidebarAddressFieldSurface(
@@ -97,7 +129,8 @@ extension View {
                 progress: progress,
                 isLoading: isLoading,
                 isEditing: isEditing,
-                branding: branding
+                branding: branding,
+                siteAccent: siteAccent
             )
         )
     }

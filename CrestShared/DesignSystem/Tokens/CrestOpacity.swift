@@ -17,6 +17,9 @@ enum CrestOpacity {
     static let controlShadow = 0.16
     /// A status drawn across a sidebar row, under its title.
     static let statusSurface = 0.35
+    /// The wash that fills an address field from its leading edge as a page
+    /// loads.
+    static let loadingSurface = 0.35
     /// A status drawn across a pinned tile, which is small and sits on its
     /// own plate.
     static let prominentStatusSurface = 0.6

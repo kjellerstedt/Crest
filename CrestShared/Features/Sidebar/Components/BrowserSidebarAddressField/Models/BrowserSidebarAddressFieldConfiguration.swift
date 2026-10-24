@@ -42,6 +42,9 @@ struct BrowserSidebarAddressFieldConfiguration {
     var addressDisplayAccessibilityIdentifier = "address-display"
     var prompt: LocalizedStringKey = "Search or enter website"
     var branding: SpaceBranding? = nil
+    /// The shown page's own theme colour, for the loading indicator when the
+    /// person asks for it.
+    var siteAccent: BrowserTabIconAccent? = nil
 
     var metrics: BrowserSidebarAddressFieldMetrics {
         capabilities.addressFieldMetrics

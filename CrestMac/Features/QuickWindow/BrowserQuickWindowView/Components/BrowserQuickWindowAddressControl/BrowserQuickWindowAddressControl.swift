@@ -51,7 +51,8 @@ struct BrowserQuickWindowAddressControl: View {
             leadingPadding: BrowserQuickWindowLayout.sourceChipLeadingInset,
             progress: model.page?.estimatedProgress ?? 0,
             isLoading: model.page?.live.isLoading == true,
-            isEditing: isAddressEditing
+            isEditing: isAddressEditing,
+            siteAccent: model.page?.siteThemeIconAccent
         )
         .coordinateSpace(Self.field)
         .frame(
