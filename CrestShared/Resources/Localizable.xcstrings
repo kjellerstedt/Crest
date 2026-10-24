@@ -14,6 +14,9 @@
         }
       }
     },
+    "“%@” locked again. Try again." : {
+
+    },
     "@ Filters" : {
 
     },
@@ -2944,6 +2947,9 @@
     "Capture in Portrait Mode" : {
 
     },
+    "Capture Page" : {
+
+    },
     "Capture Window" : {
 
     },
@@ -3959,6 +3965,9 @@
 
     },
     "Couldn’t change app icon" : {
+
+    },
+    "Couldn’t change the lock on “%@”" : {
 
     },
     "Couldn’t check password" : {
@@ -11467,6 +11476,9 @@
     "Screen Sharing" : {
 
     },
+    "screenshot snapshot region selection image clipboard" : {
+
+    },
     "Scripts run with the page’s own access to the site." : {
 
     },
@@ -12962,6 +12974,9 @@
       }
     },
     "Storm Gold" : {
+
+    },
+    "Stretch pins to fill the row" : {
 
     },
     "Strict" : {

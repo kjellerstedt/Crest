@@ -6184,6 +6184,7 @@ struct SpaceSettings: Equatable, Sendable {
     let isSavedTabsExpanded: Bool
     let savedTabsExpansionModifiedAt: Date?
     let credentialsEnabledModifiedAt: Date?
+    let accessPolicyModifiedAt: Date?
     let look: SpaceBranding
     let requiresAuthentication: Bool
 
@@ -6200,6 +6201,7 @@ struct SpaceSettings: Equatable, Sendable {
         var isSavedTabsExpanded: Bool
         var savedTabsExpansionModifiedAt: Date?
         var credentialsEnabledModifiedAt: Date?
+        var accessPolicyModifiedAt: Date?
     }
 
     /// The record's fields alone, as a platform sends it back.
@@ -6214,7 +6216,8 @@ struct SpaceSettings: Equatable, Sendable {
             accessPolicy: accessPolicy,
             isSavedTabsExpanded: isSavedTabsExpanded,
             savedTabsExpansionModifiedAt: savedTabsExpansionModifiedAt,
-            credentialsEnabledModifiedAt: credentialsEnabledModifiedAt
+            credentialsEnabledModifiedAt: credentialsEnabledModifiedAt,
+            accessPolicyModifiedAt: accessPolicyModifiedAt
         )
     }
 }
@@ -17303,6 +17306,7 @@ struct ShortcutCommand: Hashable, Sendable {
         case openFile
         case findNext
         case findPrevious
+        case capturePage
     }
 
     let tag: Int
@@ -19193,6 +19197,29 @@ struct ShortcutCommand: Hashable, Sendable {
         offersInPalette: true,
         isReservedFromPages: false
     )
+    static let capturePage = ShortcutCommand(
+        tag: 70,
+        kind: .capturePage,
+        name: "capturePage",
+        section: ShortcutSection.page,
+        title: LocalizedStringResource("Capture Page"),
+        searchTerms: LocalizedStringResource("screenshot snapshot region selection image clipboard"),
+        menuTitle: nil,
+        symbol: "camera",
+        requiredCapability: EngineCapability.viewportCapture,
+        selects: nil,
+        number: nil,
+        defaultShortcuts: [
+            ShortcutDefault(
+                platform: DevicePlatform.desktop,
+                keys: KeyCombination(key: "2", isSpecialKey: false, modifiers: [.command, .shift]),
+                yieldsToOverrides: true
+            )
+        ],
+        paletteRest: nil,
+        offersInPalette: true,
+        isReservedFromPages: false
+    )
 
     static let all: [ShortcutCommand] = [
         newWindow,
@@ -19264,7 +19291,8 @@ struct ShortcutCommand: Hashable, Sendable {
         toggleTranslationToolbar,
         openFile,
         findNext,
-        findPrevious
+        findPrevious,
+        capturePage
     ]
 
     static func named(_ name: String?) -> ShortcutCommand? {
@@ -19450,7 +19478,8 @@ struct ShortcutMenu: Hashable, Sendable {
                 ShortcutCommand.copyPageLinkAsMarkdown,
                 ShortcutCommand.sharePage,
                 ShortcutCommand.exportPDF,
-                ShortcutCommand.saveWebArchive
+                ShortcutCommand.saveWebArchive,
+                ShortcutCommand.capturePage
             ]
         ]
     )
@@ -23348,6 +23377,10 @@ final class SpaceSettingsModel: ObservedModel {
         access(keyPath: \.credentialsEnabledModifiedAt)
         return credentialsEnabledModifiedAtStorage
     }
+    var accessPolicyModifiedAt: Date? {
+        access(keyPath: \.accessPolicyModifiedAt)
+        return accessPolicyModifiedAtStorage
+    }
     var look: SpaceBranding {
         access(keyPath: \.look)
         return lookStorage
@@ -23367,6 +23400,7 @@ final class SpaceSettingsModel: ObservedModel {
     @ObservationIgnored private var isSavedTabsExpandedStorage: Bool
     @ObservationIgnored private var savedTabsExpansionModifiedAtStorage: Date?
     @ObservationIgnored private var credentialsEnabledModifiedAtStorage: Date?
+    @ObservationIgnored private var accessPolicyModifiedAtStorage: Date?
     @ObservationIgnored private var lookStorage: SpaceBranding
     @ObservationIgnored private var requiresAuthenticationStorage: Bool
 
@@ -23382,6 +23416,7 @@ final class SpaceSettingsModel: ObservedModel {
             isSavedTabsExpanded: isSavedTabsExpanded,
             savedTabsExpansionModifiedAt: savedTabsExpansionModifiedAt,
             credentialsEnabledModifiedAt: credentialsEnabledModifiedAt,
+            accessPolicyModifiedAt: accessPolicyModifiedAt,
             look: look,
             requiresAuthentication: requiresAuthentication
         )
@@ -23398,6 +23433,7 @@ final class SpaceSettingsModel: ObservedModel {
         isSavedTabsExpandedStorage = value.isSavedTabsExpanded
         savedTabsExpansionModifiedAtStorage = value.savedTabsExpansionModifiedAt
         credentialsEnabledModifiedAtStorage = value.credentialsEnabledModifiedAt
+        accessPolicyModifiedAtStorage = value.accessPolicyModifiedAt
         lookStorage = value.look
         requiresAuthenticationStorage = value.requiresAuthentication
     }
@@ -23442,6 +23478,10 @@ final class SpaceSettingsModel: ObservedModel {
         if credentialsEnabledModifiedAtStorage != value.credentialsEnabledModifiedAt {
             credentialsEnabledModifiedAtStorage = value.credentialsEnabledModifiedAt
             withMutation(keyPath: \.credentialsEnabledModifiedAt) {}
+        }
+        if accessPolicyModifiedAtStorage != value.accessPolicyModifiedAt {
+            accessPolicyModifiedAtStorage = value.accessPolicyModifiedAt
+            withMutation(keyPath: \.accessPolicyModifiedAt) {}
         }
         if lookStorage != value.look {
             lookStorage = value.look
