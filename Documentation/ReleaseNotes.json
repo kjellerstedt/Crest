@@ -4370,6 +4370,10 @@
       "category": "new",
       "message": "On Mac, Capture Page in the Page menu and the command palette lets you drag over part of a page to copy it as an image. Its shortcut is Command-Shift-2."
     },
+    "paste-and-match-style-web-pages": {
+      "category": "fixed",
+      "message": "Paste and Match Style now works in editable web content, from the Edit menu, its shortcut and the page's right-click menu."
+    },
     "pins-stretch-to-fill-row": {
       "category": "new",
       "message": "Pins can stretch to fill the width of a row that isn't full, so an uneven number of pins no longer leaves empty space."
