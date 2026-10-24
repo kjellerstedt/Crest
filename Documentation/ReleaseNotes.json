@@ -4366,6 +4366,10 @@
       "category": "improved",
       "message": "The command palette offers to search for a typed or pasted address as well as open it."
     },
+    "capture-page-shortcut": {
+      "category": "new",
+      "message": "On Mac, Capture Page in the Page menu and the command palette lets you drag over part of a page to copy it as an image. Its shortcut is Command-Shift-2."
+    },
     "pins-stretch-to-fill-row": {
       "category": "new",
       "message": "Pins can stretch to fill the width of a row that isn't full, so an uneven number of pins no longer leaves empty space."
