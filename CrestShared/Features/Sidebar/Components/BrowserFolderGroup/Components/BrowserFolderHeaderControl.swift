@@ -2,6 +2,9 @@ import SwiftUI
 
 /// Renames in place: Return or focus loss commits, and Escape cancels.
 struct BrowserFolderHeaderControl: View {
+    /// The space the title's frame and a double-click's location are both read in.
+    static let coordinateSpace = "BrowserFolderHeaderControl"
+
     @Environment(BrowserSidebarInteractionState.self) private var sidebarInteraction
 
     let configuration: BrowserFolderGroupConfiguration
@@ -13,6 +16,8 @@ struct BrowserFolderHeaderControl: View {
     private var alwaysVisible: Bool { BrowserDeviceAppearanceStore.shared.foldersAlwaysVisible }
     private var tintsTitle: Bool { BrowserDeviceAppearanceStore.shared.foldersTintTitle }
     private var textScale: Double { BrowserDeviceAppearanceStore.shared.tabScale }
+
+    @State private var titleFrame = CGRect.zero
 
     private var isEditing: Bool {
         interaction.editingFolderRequest.wrappedValue
@@ -57,13 +62,22 @@ struct BrowserFolderHeaderControl: View {
                             metrics: configuration.headerMetrics
                         )
 
-                        BrowserFolderHeaderTitle(
-                            folder: folder, context: configuration.context, tintsTitle: tintsTitle,
-                            emphasizesShownTab: alwaysVisible
-                        )
-                        .equatable()
+                        HStack(spacing: 7) {
+                            BrowserFolderHeaderTitle(
+                                folder: folder, context: configuration.context, tintsTitle: tintsTitle,
+                                emphasizesShownTab: alwaysVisible
+                            )
+                            .equatable()
 
-                        Spacer(minLength: 8)
+                            Spacer(minLength: 8)
+                        }
+                        #if os(macOS)
+                            .onGeometryChange(for: CGRect.self) {
+                                $0.frame(in: .named(Self.coordinateSpace))
+                            } action: {
+                                titleFrame = $0
+                            }
+                        #endif
                         if showsTabCounts {
                             BrowserFolderTabCount(folder: folder, space: configuration.context.space).equatable()
                         }
@@ -72,6 +86,20 @@ struct BrowserFolderHeaderControl: View {
                     .contentShape(.rect)
                 }
                 .buttonStyle(BrowserFolderHeaderButtonStyle())
+                #if os(macOS)
+                    // One recogniser on the button, not on the title inside it: a double-click
+                    // recogniser on a descendant makes the button wait to see whether a second
+                    // click follows, and every single click then lands late. Each click of the
+                    // double-click still toggles the folder, so it ends as it began; renaming
+                    // starts after the second click's toggle, which it would otherwise skip.
+                    .coordinateSpace(.named(Self.coordinateSpace))
+                    .simultaneousGesture(
+                        SpatialTapGesture(count: 2, coordinateSpace: .named(Self.coordinateSpace)).onEnded {
+                            guard titleFrame.contains($0.location) else { return }
+                            Task { @MainActor in interaction.beginRenaming() }
+                        }
+                    )
+                #endif
             }
         }
         .modifier(BrowserSidebarDensityFont(scale: textScale, supportsTouch: capabilities.supportsTouch))

@@ -12,6 +12,9 @@ struct BrowserSidebarTabLabelContent: View {
     var leadingInset: CGFloat = 0
     var restoreSavedLocation: (() -> Void)?
     var faviconPrimaryClick: (() -> Void)?
+    /// Where the favicon and its indicator sit, for a row whose button tells a
+    /// double-click on them from one on the title. Nil where nothing needs it.
+    var iconFrameChanged: ((CGRect) -> Void)?
     var titleOpacity = 1.0
     var iconOffset: CGFloat = 0
     @Environment(\.browserInteractionCapabilities) private var capabilities
@@ -46,6 +49,9 @@ struct BrowserSidebarTabLabelContent: View {
                         .browserTabResidency(isLoaded: isLoaded)
                 }
             }
+            #if os(macOS)
+                .modifier(BrowserSidebarTabIconFrameReader(report: iconFrameChanged))
+            #endif
             .offset(x: iconOffset)
         }
         .padding(.leading, leadingInset)
@@ -53,3 +59,24 @@ struct BrowserSidebarTabLabelContent: View {
         .contentShape(.rect)
     }
 }
+
+#if os(macOS)
+    /// Reports the icon's frame in the activation button's space, and only where
+    /// a button asked for it, so rows that do not tell clicks apart watch nothing.
+    private struct BrowserSidebarTabIconFrameReader: ViewModifier {
+        let report: ((CGRect) -> Void)?
+
+        @ViewBuilder
+        func body(content: Content) -> some View {
+            if let report {
+                content.onGeometryChange(for: CGRect.self) {
+                    $0.frame(in: .named(BrowserSidebarTabActivationButton.coordinateSpace))
+                } action: {
+                    report($0)
+                }
+            } else {
+                content
+            }
+        }
+    }
+#endif

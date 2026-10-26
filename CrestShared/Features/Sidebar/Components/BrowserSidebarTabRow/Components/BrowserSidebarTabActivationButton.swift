@@ -6,6 +6,9 @@ import SwiftUI
 /// Shared with the split-group member lines, which draw the same label at
 /// their own insets inside a group's container.
 struct BrowserSidebarTabActivationButton: View {
+    /// The space the icon's frame and a double-click's location are both read in.
+    static let coordinateSpace = "BrowserSidebarTabActivationButton"
+
     @Environment(BrowserSidebarInteractionState.self) private var sidebarInteraction
     @Environment(CrestCore.self) private var core: CrestCore?
     let tab: TabStateModel
@@ -19,6 +22,11 @@ struct BrowserSidebarTabActivationButton: View {
     /// line leaves it at zero: its container has already placed it.
     var leadingInset: CGFloat = 0
     let restoreSavedLocation: (() -> Void)?
+    /// Supplied by a tab row, where a double-click on the title renames the tab
+    /// and one on the favicon keeps the saved-location restore. Nil elsewhere,
+    /// where a double-click anywhere on the button restores the saved location.
+    var beginRenaming: (() -> Void)? = nil
+    @State private var iconFrame = CGRect.zero
     let iconCustomization: BrowserIconCustomizationPresentation
     let select: () -> Void
 
@@ -27,16 +35,20 @@ struct BrowserSidebarTabActivationButton: View {
             BrowserSidebarTabLabel(
                 tab: tab, favicons: favicons, profileID: profileID, isSelected: isSelected,
                 isLoaded: isLoaded, metrics: metrics, leadingInset: leadingInset,
-                restoreSavedLocation: restoreSavedLocation, faviconPrimaryClick: faviconPrimaryClick)
+                restoreSavedLocation: restoreSavedLocation, faviconPrimaryClick: faviconPrimaryClick,
+                iconFrameChanged: beginRenaming == nil ? nil : { iconFrame = $0 })
         }
         .buttonStyle(.plain)
         .frame(maxWidth: .infinity, maxHeight: maxHeight)
         .contentShape(.rect)
         #if os(macOS)
+            // One recogniser on the button, not on the label inside it: a double-click
+            // recogniser on a descendant makes the button wait to see whether a second
+            // click follows, and every single click then lands late.
+            .coordinateSpace(.named(Self.coordinateSpace))
             .simultaneousGesture(
-                TapGesture(count: 2).onEnded {
-                    guard tab.placement == .saved else { return }
-                    restoreSavedLocation?()
+                SpatialTapGesture(count: 2, coordinateSpace: .named(Self.coordinateSpace)).onEnded {
+                    doubleClicked(at: $0.location)
                 }
             )
         #endif
@@ -56,6 +68,17 @@ struct BrowserSidebarTabActivationButton: View {
         .accessibilityAddTraits(isSelected ? .isSelected : [])
         .accessibilityIdentifier(BrowserTabAccessibilityID.row(tab.id))
     }
+
+    #if os(macOS)
+        private func doubleClicked(at location: CGPoint) {
+            if let beginRenaming, location.x > iconFrame.maxX {
+                beginRenaming()
+                return
+            }
+            guard tab.placement == .saved else { return }
+            restoreSavedLocation?()
+        }
+    #endif
 
     private var iconPickerArrowEdge: Edge? {
         #if os(macOS)
