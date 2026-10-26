@@ -46,7 +46,7 @@ struct BrowserLinkRouteCard: View {
     private var condition: some View {
         HStack(spacing: 8) {
             Text("When URL").fontWeight(.medium)
-            Picker("Match", selection: binding(route.match, field: BrowserLinkRouteFieldUpdate.match)) {
+            Picker("Match", selection: binding(route.pattern.match, field: BrowserLinkRouteFieldUpdate.match)) {
                 ForEach(LinkRouteMatch.all, id: \.self) { Text($0.title).tag($0) }
             }
             .labelsHidden().fixedSize()
@@ -78,7 +78,7 @@ struct BrowserLinkRouteCard: View {
                 // A grouped form shows a field's title as a row label beside
                 // it, so the example is a prompt and the label stays hidden.
                 TextField(
-                    "URL or text", text: binding(route.pattern, field: BrowserLinkRouteFieldUpdate.pattern),
+                    "URL or text", text: binding(route.pattern.text, field: BrowserLinkRouteFieldUpdate.pattern),
                     prompt: Text("example.com")
                 )
                 .labelsHidden()

@@ -40,7 +40,7 @@ public sealed partial class BrowserContractsTests {
             FocusesNewTabs = true,
             OpensPeekAutomatically = false,
             ArchivePolicy = QuickWindowArchivePolicy.After24Hours,
-            Routes = [new(route, false, LinkRouteMatch.Exact, "example.com", personal)],
+            Routes = [new(route, false, new LinkPattern(LinkRouteMatch.Exact, "example.com"), personal)],
             RememberedSites = [new("example.org", personal)]
         };
         LinkPreferences edited;
@@ -72,6 +72,70 @@ public sealed partial class BrowserContractsTests {
         var (relaunched, _, _) = DeviceApp(directory);
         using var relaunchedDisposal = relaunched;
         Assert.Equal(edited, Links(relaunched.Send(new AdoptLinkPreferences(Encoding.UTF8.GetBytes(document)))));
+    }
+
+    [Fact]
+    public void AnAppLinkRuleSendsAMatchingLinkToItsAppOnItsDevicesAndSurvivesARelaunch() {
+        using var directory = new StorageDirectory();
+        Guid reddit = Guid.NewGuid(), safari = Guid.NewGuid(), unset = Guid.NewGuid();
+        const string link = "https://www.reddit.com/r/swift/?sort=top";
+        LinkPreferences saved;
+        {
+            var (app, _, _) = DeviceApp(directory);
+            using var disposal = app;
+            string? Routed(string url, AppLinkDevice device) => app.Query(new RouteAppLink(url, device)).Url;
+            void Edit(Guid rule, bool? isEnabled = null, LinkRouteMatch? match = null, string? pattern = null,
+                AppLinkDevice? device = null, AppLinkDestination? destination = null, string? detail = null) =>
+                app.Send(new EditAppLinkRule(rule, isEnabled, match, pattern, device, destination, detail));
+
+            app.Send(new AdoptLinkPreferences("{}"u8.ToArray()));
+            app.Send(new AddAppLinkRule(reddit));
+            app.Send(new AddAppLinkRule(safari));
+            app.Send(new AddAppLinkRule(unset));
+            Edit(reddit, pattern: "reddit.com");
+            Edit(reddit, destination: AppLinkDestination.Narwhal);
+            Edit(reddit, device: AppLinkDevice.IPhone);
+            Edit(safari, pattern: "reddit.com");
+            Edit(safari, device: AppLinkDevice.IPad);
+
+            // The first rule that applies on the device wins, and the link rides inside the address.
+            Assert.Equal("narwhal://open-url/https%3A%2F%2Fwww.reddit.com%2Fr%2Fswift%2F%3Fsort%3Dtop", Routed(link, AppLinkDevice.IPhone));
+            Assert.Equal("x-safari-" + link, Routed(link, AppLinkDevice.IPad));
+            Assert.Null(Routed("https://example.com/", AppLinkDevice.IPhone));
+
+            // A rule with no pattern never applies, and a disabled one steps aside.
+            Assert.Null(Routed("", AppLinkDevice.IPhone));
+            Edit(reddit, isEnabled: false);
+            Assert.Null(Routed(link, AppLinkDevice.IPhone));
+            Edit(reddit, isEnabled: true);
+
+            // A shortcut needs its name, and a custom address its placeholder; switching destination clears the detail.
+            Edit(reddit, destination: AppLinkDestination.Shortcut);
+            Assert.Null(Routed(link, AppLinkDevice.IPhone));
+            Edit(reddit, detail: "Open Reddit");
+            Assert.Equal("shortcuts://run-shortcut?name=Open%20Reddit&input=text&text=https%3A%2F%2Fwww.reddit.com%2Fr%2Fswift%2F%3Fsort%3Dtop",
+                Routed(link, AppLinkDevice.IPhone));
+            Edit(reddit, destination: AppLinkDestination.Custom);
+            Assert.Null(Routed(link, AppLinkDevice.IPhone));
+            Edit(reddit, detail: "apollo://reddit.com/{url}");
+            Assert.Equal("apollo://reddit.com/" + link, Routed(link, AppLinkDevice.IPhone));
+
+            Assert.Equal(new InvalidAppLinkDetail(), Assert.Throws<Rejected>(() => Edit(unset, detail: "x")).Rejection);
+            Edit(unset, destination: AppLinkDestination.Custom);
+            Assert.Equal(new InvalidAppLinkDetail(), Assert.Throws<Rejected>(() => Edit(unset, detail: "javascript:{url}")).Rejection);
+            Assert.Equal(new InvalidAppLinkDetail(), Assert.Throws<Rejected>(() => Edit(unset, detail: "narwhal://open")).Rejection);
+            Assert.Equal(new AppLinkRuleExists(reddit), Assert.Throws<Rejected>(() => app.Send(new AddAppLinkRule(reddit))).Rejection);
+            Assert.Equal(new InvalidAppLinkRuleEdit(unset), Assert.Throws<Rejected>(() => Edit(unset, isEnabled: false, pattern: "x")).Rejection);
+
+            app.Send(new MoveAppLinkRule(safari, -1));
+            saved = Links(app.Send(new RemoveAppLinkRule(unset)));
+            Assert.Equal([safari, reddit], saved.AppRules.Select(rule => rule.Id));
+            Assert.Equal(new UnknownAppLinkRule(unset), Assert.Throws<Rejected>(() => Edit(unset, isEnabled: true)).Rejection);
+        }
+
+        var (relaunched, _, _) = DeviceApp(directory);
+        using var relaunchedDisposal = relaunched;
+        Assert.Equal(saved, Links(relaunched.Send(new AdoptLinkPreferences("{}"u8.ToArray()))));
     }
 
     [Fact]

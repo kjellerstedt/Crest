@@ -6981,6 +6981,15 @@
         }
       }
     },
+    "iPad" : {
+
+    },
+    "iPhone" : {
+
+    },
+    "iPhone and iPad" : {
+
+    },
     "import export backup portability data records" : {
       "localizations" : {
         "ar" : {
@@ -7914,6 +7923,9 @@
         }
       }
     },
+    "Links you tap in a page open in another app. The first matching rule wins." : {
+
+    },
     "Lion" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -8362,6 +8374,9 @@
     "Name, crest, colors, and background" : {
 
     },
+    "Narwhal" : {
+
+    },
     "Native macOS handling" : {
 
     },
@@ -8478,6 +8493,9 @@
           }
         }
       }
+    },
+    "New Rule" : {
+
     },
     "New Saved Folder" : {
 
@@ -8768,6 +8786,9 @@
 
     },
     "No routes yet." : {
+
+    },
+    "No rules yet." : {
 
     },
     "No saved passwords" : {
@@ -9115,6 +9136,9 @@
           }
         }
       }
+    },
+    "Open in Apps" : {
+
     },
     "Open in Background" : {
 
@@ -12177,10 +12201,16 @@
         }
       }
     },
+    "Shortcut" : {
+
+    },
     "Shortcut Actions" : {
 
     },
     "Shortcut Already in Use" : {
+
+    },
+    "Shortcut Name" : {
 
     },
     "Shortcut for %@" : {
@@ -15097,6 +15127,9 @@
 
     },
     "Use your microphone on websites for calls and recording." : {
+
+    },
+    "Use {url} for the link, or {encodedUrl} to place it inside another address." : {
 
     },
     "Used by %@" : {

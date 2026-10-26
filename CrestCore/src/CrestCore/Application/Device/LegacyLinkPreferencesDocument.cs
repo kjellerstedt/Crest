@@ -79,10 +79,10 @@ internal static class LegacyLinkPreferencesDocument {
                 || routes.Any(route => route.Id == id)
                 || Member(value, RouteEnabled) is not { ValueKind: JsonValueKind.True or JsonValueKind.False } enabled
                 || LinkRouteMatch.Named(Text(value, RouteMatch)) is not { } match
-                || Text(value, RoutePattern) is not { Length: <= EditLinkRoute.MaximumPatternLength } pattern
+                || Text(value, RoutePattern) is not { Length: <= LinkPattern.MaximumLength } pattern
                 || Member(value, RouteSpace) is not { } spaceValue || Identity(spaceValue) is not { } space)
                 continue;
-            routes.Add(new(id, enabled.GetBoolean(), match, pattern, space));
+            routes.Add(new(id, enabled.GetBoolean(), new LinkPattern(match, pattern), space));
         }
         return routes;
     }

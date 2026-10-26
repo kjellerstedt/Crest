@@ -11,7 +11,7 @@ public sealed record EditLinkRoute(Guid RouteId, bool? IsEnabled, LinkRouteMatch
     : LinkIntent {
     #region Static Variables
 
-    public const int MaximumPatternLength = 2048;
+    public const int MaximumPatternLength = LinkPattern.MaximumLength;
 
     #endregion
 

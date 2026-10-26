@@ -91,14 +91,36 @@ final class BrowserLinkPreferenceStore {
         send(MoveLinkRoute(routeID: id, offset: offset))
     }
 
-    /// Sends an edit; one the core refuses leaves the preferences as they were.
-    private func send(_ intent: some LinkIntent) {
+    func addAppRule() {
+        send(AddAppLinkRule(ruleID: UUID()))
+    }
+
+    /// Whether the core applied the edit.
+    @discardableResult
+    func updateAppRule(_ id: UUID, field: BrowserAppLinkRuleFieldUpdate) -> Bool {
+        send(field.edit(of: id))
+    }
+
+    func removeAppRule(_ id: UUID) {
+        send(RemoveAppLinkRule(ruleID: id))
+    }
+
+    func moveAppRule(_ id: UUID, by offset: Int) {
+        send(MoveAppLinkRule(ruleID: id, offset: offset))
+    }
+
+    /// Sends an edit and answers whether the core applied it; one the core
+    /// refuses leaves the preferences as they were.
+    @discardableResult
+    private func send(_ intent: some LinkIntent) -> Bool {
         do {
             try core.send(intent)
+            return true
         } catch {
             Self.log.error(
                 "The core refused \(String(describing: type(of: intent))): \(DiagnosticLog.describe(error))"
             )
+            return false
         }
     }
 }

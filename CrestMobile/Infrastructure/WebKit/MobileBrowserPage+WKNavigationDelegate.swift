@@ -99,6 +99,20 @@ extension MobileBrowserPage: WKNavigationDelegate {
         ).apply(to: self, for: navigationAction, in: webView, decisionHandler: decisionHandler)
     }
 
+    /// Hands a tapped link to another app when this device's app-link rules
+    /// say so, and answers whether it did.
+    func opensInAnotherApp(_ navigationAction: WKNavigationAction) -> Bool {
+        guard
+            navigationAction.navigationType == .linkActivated,
+            navigationAction.targetFrame?.isMainFrame ?? true,
+            let url = navigationAction.request.url,
+            let destination = corePage.appLinkAddress(
+                for: url, on: UIDevice.current.userInterfaceIdiom == .pad ? .iPad : .iPhone)
+        else { return false }
+        UIApplication.shared.open(destination)
+        return true
+    }
+
     /// Where the person touched the link `navigationAction` follows, for a
     /// link they activated at the top level, which a Peek grows from.
     func linkSourcePresentation(

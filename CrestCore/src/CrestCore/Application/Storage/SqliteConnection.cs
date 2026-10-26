@@ -147,6 +147,8 @@ internal sealed class SqliteConnection : IDisposable {
         Execute("CREATE TABLE IF NOT EXISTS device_link_behavior (name TEXT PRIMARY KEY, is_on INTEGER NOT NULL)");
         Execute("CREATE TABLE IF NOT EXISTS device_link_route (id TEXT PRIMARY KEY, enabled INTEGER NOT NULL, match TEXT NOT NULL, "
             + "pattern TEXT NOT NULL, space TEXT NOT NULL, position INTEGER NOT NULL)");
+        Execute("CREATE TABLE IF NOT EXISTS device_link_app_rule (id TEXT PRIMARY KEY, enabled INTEGER NOT NULL, match TEXT NOT NULL, "
+            + "pattern TEXT NOT NULL, device TEXT NOT NULL, destination TEXT NOT NULL, detail TEXT NOT NULL, position INTEGER NOT NULL)");
         Execute("CREATE TABLE IF NOT EXISTS device_link_site (site TEXT PRIMARY KEY, space TEXT NOT NULL, position INTEGER NOT NULL)");
         Execute("CREATE TABLE IF NOT EXISTS device_cloud_transport (id INTEGER PRIMARY KEY CHECK (id = 0), "
             + "record_schema INTEGER NOT NULL, requires_full_pull INTEGER NOT NULL, awaits_account_decision INTEGER NOT NULL, "
@@ -308,13 +310,22 @@ internal sealed class SqliteConnection : IDisposable {
         Rows("SELECT id, enabled, match, pattern, space FROM device_link_route ORDER BY position", statement => {
             if (Identity(statement, 0) is { } id && LinkRouteMatch.Named(Sqlite.ColumnText(statement, 2)) is { } match
                 && Identity(statement, 4) is { } space)
-                routes.Add(new(id, Sqlite.sqlite3_column_int(statement, 1) != 0, match, Sqlite.ColumnText(statement, 3), space));
+                routes.Add(new(id, Sqlite.sqlite3_column_int(statement, 1) != 0, new LinkPattern(match, Sqlite.ColumnText(statement, 3)), space));
+        });
+        var appRules = new List<AppLinkRule>();
+        Rows("SELECT id, enabled, match, pattern, device, destination, detail FROM device_link_app_rule ORDER BY position", statement => {
+            string detail = Sqlite.ColumnText(statement, 6);
+            if (Identity(statement, 0) is { } id && LinkRouteMatch.Named(Sqlite.ColumnText(statement, 2)) is { } match
+                && AppLinkDevice.Named(Sqlite.ColumnText(statement, 4)) is { } device
+                && AppLinkDestination.Named(Sqlite.ColumnText(statement, 5)) is { } destination && destination.Accepts(detail))
+                appRules.Add(new(id, Sqlite.sqlite3_column_int(statement, 1) != 0, new LinkPattern(match, Sqlite.ColumnText(statement, 3)),
+                    device, destination, detail));
         });
         var sites = new List<RememberedSite>();
         Rows("SELECT site, space FROM device_link_site ORDER BY position", statement => {
             if (Identity(statement, 1) is { } space) sites.Add(new(Sqlite.ColumnText(statement, 0), space));
         });
-        return links with { Routes = routes, RememberedSites = sites };
+        return links with { Routes = routes, RememberedSites = sites, AppRules = appRules };
     }
 
     /// The agent preferences: off, reaching nothing and trusting no agent for a
@@ -542,7 +553,7 @@ internal sealed class SqliteConnection : IDisposable {
     /// preference under its behavior's `Name`, and the routes and remembered
     /// sites in order.
     private void WriteLinks(LinkPreferences links) {
-        foreach (var table in new[] { "device_link", "device_link_behavior", "device_link_route", "device_link_site" })
+        foreach (var table in new[] { "device_link", "device_link_behavior", "device_link_route", "device_link_app_rule", "device_link_site" })
             Execute($"DELETE FROM {table}");
         Insert("INSERT INTO device_link(id, destination, destination_space, peek_modifier, archive_policy) VALUES(0,?,?,?,?)", statement => {
             Bind(statement, 1, links.Destination.Name);
@@ -559,10 +570,21 @@ internal sealed class SqliteConnection : IDisposable {
             links.Routes, (statement, route, index) => {
                 Bind(statement, 1, Spelling(route.Id));
                 Checked(Sqlite.sqlite3_bind_int64(statement, 2, route.IsEnabled ? 1 : 0));
-                Bind(statement, 3, route.Match.Name);
-                Bind(statement, 4, route.Pattern);
+                Bind(statement, 3, route.Pattern.Match.Name);
+                Bind(statement, 4, route.Pattern.Text);
                 Bind(statement, 5, Spelling(route.DestinationSpaceId));
                 Checked(Sqlite.sqlite3_bind_int64(statement, 6, index));
+            });
+        InsertInOrder("INSERT INTO device_link_app_rule(id, enabled, match, pattern, device, destination, detail, position) VALUES(?,?,?,?,?,?,?,?)",
+            links.AppRules, (statement, rule, index) => {
+                Bind(statement, 1, Spelling(rule.Id));
+                Checked(Sqlite.sqlite3_bind_int64(statement, 2, rule.IsEnabled ? 1 : 0));
+                Bind(statement, 3, rule.Pattern.Match.Name);
+                Bind(statement, 4, rule.Pattern.Text);
+                Bind(statement, 5, rule.Device.Name);
+                Bind(statement, 6, rule.Destination.Name);
+                Bind(statement, 7, rule.Detail);
+                Checked(Sqlite.sqlite3_bind_int64(statement, 8, index));
             });
         InsertInOrder("INSERT INTO device_link_site(site, space, position) VALUES(?,?,?)",
             links.RememberedSites, (statement, remembered, index) => {

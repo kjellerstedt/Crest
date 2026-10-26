@@ -160,6 +160,16 @@ final class CorePage {
         (try? core?.query(OpenedWindowSelection(gesture: gesture)))?.selects ?? true
     }
 
+    /// The address another app opens for a link followed from the page, when
+    /// this device's app-link rules send it there, `device` being the one the
+    /// app runs on; nil leaves the page to load it, as it does when the core
+    /// cannot answer.
+    func appLinkAddress(for url: URL, on device: AppLinkDevice) -> URL? {
+        guard let spelling = (try? core?.query(RouteAppLink(url: url.absoluteString, device: device)))?.url
+        else { return nil }
+        return URL(string: spelling)
+    }
+
     /// Tells the core no page will load a link the page's engine staged, so
     /// the engine forgets it. A link its engine keeps itself needs nothing.
     func discardStagedLink(_ link: BrowserEngineNavigation) {

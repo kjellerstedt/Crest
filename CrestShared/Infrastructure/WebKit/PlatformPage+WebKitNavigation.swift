@@ -51,6 +51,13 @@ extension BrowserPlatformPage {
         in webView: WKWebView,
         decisionHandler: @escaping @MainActor @Sendable (WKNavigationActionPolicy) -> Void
     ) {
+        #if os(iOS)
+            // A tapped link another app should open leaves Crest before the core judges it.
+            if opensInAnotherApp(navigationAction) {
+                decisionHandler(.cancel)
+                return
+            }
+        #endif
         let sourcePresentation = linkSourcePresentation(for: navigationAction, in: webView)
         // The core decides what the link does, as it does for Chromium's.
         let webKitPage = webKitEnginePage

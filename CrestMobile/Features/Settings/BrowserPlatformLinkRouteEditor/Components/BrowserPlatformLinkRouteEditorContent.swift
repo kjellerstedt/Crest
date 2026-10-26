@@ -34,10 +34,10 @@ struct BrowserPlatformLinkRouteEditorContent: View {
             Button {
                 presentsMatchChoices = true
             } label: {
-                routeChoiceLabel(title: "Match", value: String(localized: route.match.title))
+                routeChoiceLabel(title: "Match", value: String(localized: route.pattern.match.title))
             }
             .buttonStyle(.plain)
-            .accessibilityValue(Text(route.match.title))
+            .accessibilityValue(Text(route.pattern.match.title))
             .accessibilityIdentifier("route-match-\(identifierSuffix)")
             .confirmationDialog(
                 "Match",
@@ -55,7 +55,7 @@ struct BrowserPlatformLinkRouteEditorContent: View {
             TextField(
                 "URL or text",
                 text: binding(
-                    route.pattern,
+                    route.pattern.text,
                     field: BrowserLinkRouteFieldUpdate.pattern
                 )
             )

@@ -24,6 +24,16 @@ struct BrowserLinkSettingsContent: View {
             dragsLinksToPeek: dragsLinksToPeekBinding
         )
 
+        #if os(iOS)
+            BrowserAppLinkRulesSection(
+                rules: links.preferences.appRules,
+                update: { links.updateAppRule($0, field: $1) },
+                remove: links.removeAppRule,
+                move: links.moveAppRule,
+                add: links.addAppRule
+            )
+        #endif
+
         if lockedRouteDestinationSpaces.isEmpty {
             BrowserLinkRoutingSection(
                 routes: links.preferences.routes,

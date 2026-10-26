@@ -14,6 +14,10 @@ public sealed record OpenedWindowSelected(bool Selects);
 public sealed record ExternalLinkPlacement(Guid? SpaceId, bool OpensQuickWindow, bool SubstitutesForLockedSpace, Guid? WindowId,
     bool OpensWindow);
 
+/// The address the system opens for a link an app-link rule sends to another
+/// app, or null when no rule does and the page loads the link.
+public sealed record AppLinkPlacement(string? Url);
+
 /// The window and Space a document another app hands Crest opens in: an open
 /// window, or with `OpensWindow`, one to open. Both are null when no Space may
 /// take it.
@@ -44,6 +48,23 @@ public sealed record LinkRoutesFull(int Maximum) : Rejection;
 
 /// No route has this identity.
 public sealed record UnknownLinkRoute(Guid RouteId) : Rejection;
+
+/// An app-link rule edit gives no field, or more than one.
+public sealed record InvalidAppLinkRuleEdit(Guid RuleId) : Rejection;
+
+/// An app-link rule's destination does not accept this detail: a template with
+/// no placeholder, or that does not read as an address that hands a link to an
+/// app, or a detail for a destination that asks for none.
+public sealed record InvalidAppLinkDetail : Rejection;
+
+/// An app-link rule already has this identity.
+public sealed record AppLinkRuleExists(Guid RuleId) : Rejection;
+
+/// No app-link rule more fits: there are already `Maximum`.
+public sealed record AppLinkRulesFull(int Maximum) : Rejection;
+
+/// No app-link rule has this identity.
+public sealed record UnknownAppLinkRule(Guid RuleId) : Rejection;
 
 #endregion
 

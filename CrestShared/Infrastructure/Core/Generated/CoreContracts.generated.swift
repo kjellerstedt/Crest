@@ -196,6 +196,8 @@ enum Rejection: Equatable, Error, Sendable {
     case agentsUnavailable(AgentsUnavailable)
     case alreadyInSpace(AlreadyInSpace)
     case alreadyInSplit(AlreadyInSplit)
+    case appLinkRuleExists(AppLinkRuleExists)
+    case appLinkRulesFull(AppLinkRulesFull)
     case archiveInvalid(ArchiveInvalid)
     case archiveTooLarge(ArchiveTooLarge)
     case authenticationBusy(AuthenticationBusy)
@@ -230,6 +232,8 @@ enum Rejection: Equatable, Error, Sendable {
     case guideSpaceLocked(GuideSpaceLocked)
     case incompleteSplit(IncompleteSplit)
     case invalidAgent(InvalidAgent)
+    case invalidAppLinkDetail(InvalidAppLinkDetail)
+    case invalidAppLinkRuleEdit(InvalidAppLinkRuleEdit)
     case invalidBlockedPopup(InvalidBlockedPopup)
     case invalidCredentialDate(InvalidCredentialDate)
     case invalidCredentialFile(InvalidCredentialFile)
@@ -328,6 +332,7 @@ enum Rejection: Equatable, Error, Sendable {
     case transientAlreadyCompleted(TransientAlreadyCompleted)
     case translationRuleLimitReached(TranslationRuleLimitReached)
     case unknownAgentSession(UnknownAgentSession)
+    case unknownAppLinkRule(UnknownAppLinkRule)
     case unknownArchivedTab(UnknownArchivedTab)
     case unknownCloudMerge(UnknownCloudMerge)
     case unknownFolder(UnknownFolder)
@@ -775,6 +780,12 @@ struct ActivateMediaSession: PageRequest, Equatable, Sendable {
     let document: String
 }
 
+struct AddAppLinkRule: Intent, LinkIntent, Equatable, Sendable {
+    static let maximumRules: Int = 64
+
+    let ruleID: UUID
+}
+
 struct AddContentScript: PageRequest, Equatable, Sendable {
     typealias Answer = Bool
 
@@ -1051,6 +1062,27 @@ struct AppConfiguration: Equatable, Sendable {
     let storageDirectory: String?
     let platform: DevicePlatform
     let importNames: [ImportSpaceNames]?
+}
+
+struct AppLinkPlacement: Equatable, Sendable {
+    let url: String?
+}
+
+struct AppLinkRule: Equatable, Sendable, Identifiable {
+    let id: UUID
+    let isEnabled: Bool
+    let pattern: LinkPattern
+    let device: AppLinkDevice
+    let destination: AppLinkDestination
+    let detail: String
+}
+
+struct AppLinkRuleExists: Equatable, Sendable {
+    let ruleID: UUID
+}
+
+struct AppLinkRulesFull: Equatable, Sendable {
+    let maximum: Int
 }
 
 struct AppPreferences: Equatable, Sendable {
@@ -2425,6 +2457,16 @@ struct DuplicateTabs: Intent, SessionIntent, Equatable, Sendable {
     let selection: TabSelection
 }
 
+struct EditAppLinkRule: Intent, LinkIntent, Equatable, Sendable {
+    let ruleID: UUID
+    let isEnabled: Bool?
+    let match: LinkRouteMatch?
+    let pattern: String?
+    let device: AppLinkDevice?
+    let destination: AppLinkDestination?
+    let detail: String?
+}
+
 struct EditEngineRule: Intent, Equatable, Sendable {
     let previousOrigin: SiteOrigin?
     let origin: SiteOrigin
@@ -3269,6 +3311,13 @@ struct InvalidAgent: Equatable, Sendable {
     }
 }
 
+struct InvalidAppLinkDetail: Equatable, Sendable {
+}
+
+struct InvalidAppLinkRuleEdit: Equatable, Sendable {
+    let ruleID: UUID
+}
+
 struct InvalidBlockedPopup: Equatable, Sendable {
 }
 
@@ -3599,6 +3648,13 @@ struct LinkNavigationAnswer: Equatable, Sendable {
     let decision: LinkNavigationDecision
 }
 
+struct LinkPattern: Equatable, Sendable {
+    static let maximumLength: Int = 2048
+
+    let match: LinkRouteMatch
+    let text: String
+}
+
 struct LinkPatternTooLong: Equatable, Sendable {
     let maximum: Int
 }
@@ -3615,6 +3671,7 @@ struct LinkPreferences: Equatable, Sendable {
     let remembersSpaceBySite: Bool
     let routes: [LinkRoute]
     let rememberedSites: [RememberedSite]
+    let appRules: [AppLinkRule]
 }
 
 struct LinkPreferencesChanged: CoreChange, Equatable, Sendable {
@@ -3624,8 +3681,7 @@ struct LinkPreferencesChanged: CoreChange, Equatable, Sendable {
 struct LinkRoute: Equatable, Sendable, Identifiable {
     let id: UUID
     let isEnabled: Bool
-    let match: LinkRouteMatch
-    let pattern: String
+    let pattern: LinkPattern
     let destinationSpaceID: UUID
 }
 
@@ -3762,6 +3818,11 @@ struct MostRecentCredential: Query, Equatable, Sendable {
     typealias Answer = CredentialChoice
 
     let records: [CredentialRecord]
+}
+
+struct MoveAppLinkRule: Intent, LinkIntent, Equatable, Sendable {
+    let ruleID: UUID
+    let offset: Int
 }
 
 struct MoveFolder: Intent, SessionIntent, Equatable, Sendable {
@@ -5020,6 +5081,10 @@ struct RememberedSite: Equatable, Sendable {
     let spaceID: UUID
 }
 
+struct RemoveAppLinkRule: Intent, LinkIntent, Equatable, Sendable {
+    let ruleID: UUID
+}
+
 struct RemoveDownload: Intent, DownloadIntent, Equatable, Sendable {
     let downloadID: UUID
 }
@@ -5210,6 +5275,13 @@ struct ReviewImport: Intent, SetupFlowIntent, Equatable, Sendable {
     let extensions: [ImportSpaceExtensions]?
     let leftOut: [ImportLeftOut]?
     let title: String?
+}
+
+struct RouteAppLink: Query, Equatable, Sendable {
+    typealias Answer = AppLinkPlacement
+
+    let url: String
+    let device: AppLinkDevice
 }
 
 struct RouteExternalLink: Query, Equatable, Sendable {
@@ -6853,6 +6925,10 @@ struct UnknownAgentSession: Equatable, Sendable {
     }
 }
 
+struct UnknownAppLinkRule: Equatable, Sendable {
+    let ruleID: UUID
+}
+
 struct UnknownArchivedTab: Equatable, Sendable {
     let tabID: UUID
 }
@@ -7567,6 +7643,128 @@ struct AgentActivityKind: Hashable, Sendable {
             self.name = name
             self.title = title
             self.symbol = symbol
+        }
+    }
+}
+
+/// The members of the core's `AppLinkDestination`. A member's wire tag is its index in `all`.
+/// Core-only behavior, not emitted: `isValidDetail`, `address`.
+struct AppLinkDestination: Hashable, Sendable {
+    static let maximumDetailLength = 2048
+
+    let tag: Int
+    var name: String { facts.name }
+    var title: LocalizedStringResource { facts.title }
+    var detailTitle: LocalizedStringResource { facts.detailTitle }
+    var asksForDetail: Bool { facts.asksForDetail }
+    private let facts: Facts
+
+    private init(
+        tag: Int,
+        name: String,
+        title: LocalizedStringResource,
+        detailTitle: LocalizedStringResource,
+        asksForDetail: Bool
+    ) {
+        self.tag = tag
+        facts = Facts(name: name, title: title, detailTitle: detailTitle, asksForDetail: asksForDetail)
+    }
+
+    static let safari = AppLinkDestination(
+        tag: 0,
+        name: "safari",
+        title: LocalizedStringResource("Safari"),
+        detailTitle: LocalizedStringResource(""),
+        asksForDetail: false
+    )
+    static let narwhal = AppLinkDestination(
+        tag: 1,
+        name: "narwhal",
+        title: LocalizedStringResource("Narwhal"),
+        detailTitle: LocalizedStringResource(""),
+        asksForDetail: false
+    )
+    static let shortcut = AppLinkDestination(
+        tag: 2,
+        name: "shortcut",
+        title: LocalizedStringResource("Shortcut"),
+        detailTitle: LocalizedStringResource("Shortcut Name"),
+        asksForDetail: true
+    )
+    static let custom = AppLinkDestination(
+        tag: 3,
+        name: "custom",
+        title: LocalizedStringResource("Custom"),
+        detailTitle: LocalizedStringResource("Address"),
+        asksForDetail: true
+    )
+
+    static let all: [AppLinkDestination] = [safari, narwhal, shortcut, custom]
+
+    static func named(_ name: String?) -> AppLinkDestination? {
+        all.first { $0.name == name }
+    }
+
+    static func == (lhs: AppLinkDestination, rhs: AppLinkDestination) -> Bool {
+        lhs.tag == rhs.tag
+    }
+
+    func hash(into hasher: inout Hasher) {
+        hasher.combine(tag)
+    }
+
+    private final class Facts: Sendable {
+        let name: String
+        let title: LocalizedStringResource
+        let detailTitle: LocalizedStringResource
+        let asksForDetail: Bool
+
+        init(name: String, title: LocalizedStringResource, detailTitle: LocalizedStringResource, asksForDetail: Bool) {
+            self.name = name
+            self.title = title
+            self.detailTitle = detailTitle
+            self.asksForDetail = asksForDetail
+        }
+    }
+}
+
+/// The members of the core's `AppLinkDevice`. A member's wire tag is its index in `all`.
+struct AppLinkDevice: Hashable, Sendable {
+    let tag: Int
+    var name: String { facts.name }
+    var title: LocalizedStringResource { facts.title }
+    private let facts: Facts
+
+    private init(tag: Int, name: String, title: LocalizedStringResource) {
+        self.tag = tag
+        facts = Facts(name: name, title: title)
+    }
+
+    static let any = AppLinkDevice(tag: 0, name: "any", title: LocalizedStringResource("iPhone and iPad"))
+    static let iPhone = AppLinkDevice(tag: 1, name: "iphone", title: LocalizedStringResource("iPhone"))
+    static let iPad = AppLinkDevice(tag: 2, name: "ipad", title: LocalizedStringResource("iPad"))
+
+    static let all: [AppLinkDevice] = [any, iPhone, iPad]
+
+    static func named(_ name: String?) -> AppLinkDevice? {
+        all.first { $0.name == name }
+    }
+
+    static func == (lhs: AppLinkDevice, rhs: AppLinkDevice) -> Bool {
+        lhs.tag == rhs.tag
+    }
+
+    func hash(into hasher: inout Hasher) {
+        hasher.combine(tag)
+    }
+
+    private final class Facts: Sendable {
+        let name: String
+        let title: LocalizedStringResource
+
+        init(name: String, title: LocalizedStringResource) {
+            self.name = name
+            self.title = title
         }
     }
 }
